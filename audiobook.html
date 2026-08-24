@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阿加莎·克里斯蒂 — 英文有声书</title>
+<style>
+@font-face {
+  font-family: 'Crimson Pro';
+  src: url('./_shared/fonts/CrimsonPro-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+}
+@font-face {
+  font-family: 'Crimson Pro';
+  src: url('./_shared/fonts/CrimsonPro-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal;
+}
+@font-face {
+  font-family: 'Lora';
+  src: url('./_shared/fonts/Lora-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+}
+@font-face {
+  font-family: 'Lora';
+  src: url('./_shared/fonts/Lora-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal;
+}
+@font-face {
+  font-family: 'Noto Serif SC';
+  src: url('./_shared/fonts/NotoSerifSC-Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal;
+}
+@font-face {
+  font-family: 'Noto Serif SC';
+  src: url('./_shared/fonts/NotoSerifSC-Bold.ttf') format('truetype');
+  font-weight: 700; font-style: normal;
+}
+
+:root {
+  --bg: #fdfaf6;
+  --bg2: #f5efe4;
+  --ink: #2c2416;
+  --muted: #8b7e6a;
+  --rule: #d4c5b2;
+  --accent: #8b2500;
+  --accent2: #2e5c4e;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Lora', 'Georgia', serif;
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg); border-bottom: 1px solid var(--rule);
+  padding: 0.75rem 1.5rem;
+  display: flex; align-items: center; gap: 1rem;
+}
+.topbar .back {
+  font-family: 'Crimson Pro', 'Georgia', serif;
+  font-size: 0.9rem; color: var(--accent);
+  text-decoration: none; font-weight: 600; white-space: nowrap;
+}
+.topbar .back:hover { text-decoration: underline; }
+.topbar .title {
+  font-family: 'Crimson Pro', 'Georgia', serif;
+  font-size: 1.1rem; font-weight: 700; color: var(--ink);
+  text-align: center; flex: 1;
+}
+
+.container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+h1 {
+  font-family: 'Crimson Pro', 'Georgia', serif;
+  font-size: 2.2rem; font-weight: 700; color: var(--accent);
+  text-align: center; margin: 0 0 0.5rem; line-height: 1.25;
+}
+.subtitle {
+  text-align: center; color: var(--muted);
+  font-size: 0.95rem; margin-bottom: 2.5rem;
+}
+
+.note {
+  background: var(--bg2);
+  border-left: 4px solid var(--accent2);
+  padding: 0.75rem 1.25rem;
+  margin: 0 auto 2rem;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.9rem;
+  color: var(--ink);
+  max-width: 720px;
+}
+.note strong { color: var(--accent2); }
+
+/* Book list */
+.book-list { display: flex; flex-direction: column; gap: 0.75rem; max-width: 800px; margin: 0 auto; }
+
+.book-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.book-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+.book-card.active { border-color: var(--accent); box-shadow: 0 2px 16px rgba(139,37,0,0.1); }
+
+.book-header {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+}
+.book-header:hover { background: var(--bg2); }
+
+.book-num {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--muted); min-width: 2rem; text-align: center;
+}
+.book-info { flex: 1; min-width: 0; }
+.book-info .en-title {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.05rem; font-weight: 700; color: var(--ink);
+  line-height: 1.3;
+}
+.book-info .zh-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 0.85rem; color: var(--muted);
+}
+.book-meta {
+  font-size: 0.8rem; color: var(--muted);
+  text-align: right; white-space: nowrap;
+}
+.book-meta .narrator { color: var(--accent2); font-weight: 600; }
+.book-meta .year { display: block; }
+
+.play-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: transparent;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.play-btn:hover { background: var(--accent); }
+.play-btn::after {
+  content: '';
+  display: block;
+  width: 0; height: 0;
+  border-left: 10px solid var(--accent);
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  margin-left: 2px;
+  transition: border-color 0.2s;
+}
+.play-btn:hover::after { border-left-color: #fff; }
+.book-card.active .play-btn { background: var(--accent); }
+.book-card.active .play-btn::after {
+  border-left: none;
+  width: 10px; height: 10px;
+  background: #fff;
+  margin-left: 0;
+  border-radius: 1px;
+}
+
+.player-wrap {
+  display: none;
+  padding: 0 1.25rem 1.25rem;
+}
+.book-card.active .player-wrap { display: block; }
+
+.player-wrap iframe {
+  width: 100%; height: 200px;
+  border: none; border-radius: 4px;
+  background: #000;
+}
+
+.dl-link {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem; font-weight: 600;
+  transition: opacity 0.2s;
+}
+.dl-link:hover { opacity: 0.85; }
+
+.dl-note {
+  font-size: 0.85rem; color: var(--muted);
+  margin-top: 0.5rem; font-style: italic;
+}
+
+.section-label {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.85rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin: 1.5rem 0 0.5rem; padding-left: 0.25rem;
+}
+
+@media (max-width: 600px) {
+  .book-header { padding: 0.7rem 0.85rem; gap: 0.5rem; }
+  .book-info .en-title { font-size: 0.95rem; }
+  .book-meta { font-size: 0.75rem; }
+  .player-wrap iframe { height: 180px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="agatha-christie-guide.html" class="back">← 返回指南</a>
+  <span class="title">英文有声书</span>
+</div>
+
+<div class="container">
+  <h1>Agatha Christie<br>英文有声书 · 真人朗读</h1>
+  <p class="subtitle">12 本公版小说 · 专业演员录制 · 点击展开播放</p>
+
+  <div class="note">
+    <strong>使用说明：</strong>点击任意书籍展开内置播放器。8 本支持 YouTube 在线播放，4 本提供免费下载链接。所有朗读均为真人演员录制，非 AI 合成。建议使用耳机获得最佳体验。
+  </div>
+
+  <div class="book-list" id="bookList"></div>
+</div>
+
+<script>
+var books = [
+  {
+    en: 'The Mysterious Affair at Styles', zh: '斯泰尔斯庄园奇案',
+    year: '1920', narrator: 'Arthur Lane',
+    youtubeId: 'LmNwa4tD9KU', series: '波洛系列'
+  },
+  {
+    en: 'The Secret Adversary', zh: '暗藏杀机',
+    year: '1922', narrator: 'Penelope Dellaporta',
+    dl: 'https://mysteryaudio.org/the-secret-adversary-agatha-christie/', series: '汤米夫妇'
+  },
+  {
+    en: 'The Murder on the Links', zh: '高尔夫球场的疑云',
+    year: '1923', narrator: 'Arthur Lane',
+    youtubeId: 'q9u7rR-Bgd8', series: '波洛系列'
+  },
+  {
+    en: 'The Man in the Brown Suit', zh: '褐衣男子',
+    year: '1924', narrator: 'Arthur Lane',
+    youtubeId: 'FBiz7Fp1y9c', series: '非系列'
+  },
+  {
+    en: 'Poirot Investigates', zh: '首相绑架案',
+    year: '1924', narrator: 'Arthur Lane',
+    youtubeId: 'G00m_RkeM-g', series: '波洛系列（短篇集）'
+  },
+  {
+    en: 'The Secret of Chimneys', zh: '烟囱大厦的秘密',
+    year: '1925', narrator: 'Charles Armstrong',
+    dl: 'https://mysteryaudio.org/the-secret-of-chimneys-1925-agatha-christie/', series: '非系列'
+  },
+  {
+    en: 'The Murder of Roger Ackroyd', zh: '罗杰疑案',
+    year: '1926', narrator: 'Arthur Lane',
+    youtubeId: 'ZQTRjUtS1VI', series: '波洛系列'
+  },
+  {
+    en: 'The Big Four', zh: '四大魔头',
+    year: '1927', narrator: 'Arthur Lane',
+    youtubeId: 'OkLA_l0f2u0', series: '波洛系列'
+  },
+  {
+    en: 'The Mystery of the Blue Train', zh: '蓝色特快上的秘密',
+    year: '1928', narrator: 'Arthur Lane',
+    youtubeId: 'q9S06ftvSZs', series: '波洛系列'
+  },
+  {
+    en: 'The Seven Dials Mystery', zh: '七钟面之谜',
+    year: '1929', narrator: 'Emilia Fox',
+    dl: 'https://mysteryaudio.org/the-seven-dials-mystery-agatha-christie/', series: '非系列'
+  },
+  {
+    en: 'Partners in Crime', zh: '犯罪团伙',
+    year: '1929', narrator: 'Hugh Fraser',
+    youtubeId: 'p9grnJrhgHg', series: '汤米夫妇（短篇集）'
+  },
+  {
+    en: 'The Murder at the Vicarage', zh: '寓所谜案',
+    year: '1930', narrator: 'James Saxon',
+    dl: 'https://mysteryaudio.org/the-complete-miss-marple-mystery-collection-agatha-christie/', series: '马普尔系列'
+  }
+];
+
+var list = document.getElementById('bookList');
+var activeCard = null;
+
+books.forEach(function(book, i) {
+  var card = document.createElement('div');
+  card.className = 'book-card';
+
+  var header = document.createElement('div');
+  header.className = 'book-header';
+
+  header.innerHTML =
+    '<div class="book-num">' + (i + 1) + '</div>' +
+    '<div class="book-info">' +
+      '<div class="en-title">' + book.en + '</div>' +
+      '<div class="zh-title">' + book.zh + ' · ' + book.series + '</div>' +
+    '</div>' +
+    '<div class="book-meta">' +
+      '<span class="narrator">' + book.narrator + '</span>' +
+      '<span class="year">' + book.year + '</span>' +
+    '</div>' +
+    '<div class="play-btn"></div>';
+
+  header.addEventListener('click', function() {
+    if (activeCard === card) {
+      card.classList.remove('active');
+      activeCard = null;
+      var iframe = card.querySelector('iframe');
+      if (iframe) { iframe.src = iframe.src; }
+      return;
+    }
+
+    if (activeCard) {
+      activeCard.classList.remove('active');
+      var oldIframe = activeCard.querySelector('iframe');
+      if (oldIframe) { oldIframe.src = oldIframe.src; }
+    }
+
+    card.classList.add('active');
+    activeCard = card;
+
+    if (book.youtubeId) {
+      var iframe = card.querySelector('iframe');
+      if (iframe) {
+        iframe.src = 'https://www.youtube.com/embed/' + book.youtubeId + '?autoplay=1&rel=0';
+      }
+    }
+  });
+
+  card.appendChild(header);
+
+  var playerWrap = document.createElement('div');
+  playerWrap.className = 'player-wrap';
+
+  if (book.youtubeId) {
+    var iframe = document.createElement('iframe');
+    iframe.src = 'https://www.youtube.com/embed/' + book.youtubeId + '?rel=0';
+    iframe.allowFullscreen = true;
+    iframe.allow = 'autoplay; encrypted-media';
+    playerWrap.appendChild(iframe);
+  } else {
+    var a = document.createElement('a');
+    a.className = 'dl-link';
+    a.href = book.dl;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '下载免费有声书 (MP3/M4B)';
+    playerWrap.appendChild(a);
+
+    var note = document.createElement('div');
+    note.className = 'dl-note';
+    note.textContent = '此版本暂无 YouTube 在线播放，点击跳转至 mysteryaudio.org 免费下载真人朗读版。';
+    playerWrap.appendChild(note);
+  }
+
+  card.appendChild(playerWrap);
+  list.appendChild(card);
+});
+</script>
+
+</body>
+</html>
