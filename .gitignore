@@ -1,0 +1,18 @@
+# Agatha Christie Reader — Git ignore
+# 大型源文件，如果太大可以排除
+*.zip
+*.rar
+*.7z
+
+# 系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+
+# 临时文件
+*.tmp
+*.log
