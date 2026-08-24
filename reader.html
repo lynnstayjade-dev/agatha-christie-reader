@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agatha Christie — 阅读器</title>
+<style>
+@font-face { font-family: 'Crimson Pro'; src: url('./_shared/fonts/CrimsonPro-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Crimson Pro'; src: url('./_shared/fonts/CrimsonPro-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
+@font-face { font-family: 'Crimson Pro'; src: url('./_shared/fonts/CrimsonPro-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'Lora'; src: url('./_shared/fonts/Lora-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Lora'; src: url('./_shared/fonts/Lora-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
+@font-face { font-family: 'Lora'; src: url('./_shared/fonts/Lora-Italic.ttf') format('truetype'); font-weight: 400; font-style: italic; }
+@font-face { font-family: 'Noto Serif SC'; src: url('./_shared/fonts/NotoSerifSC-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+@font-face { font-family: 'Noto Serif SC'; src: url('./_shared/fonts/NotoSerifSC-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; }
+
+:root { --bg: #fdfaf6; --bg2: #f5efe4; --ink: #2c2416; --muted: #8b7e6a; --rule: #d4c5b2; --accent: #8b2500; --accent2: #2e5c4e; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Lora','Georgia',serif; font-size: 17px; line-height: 1.85;
+  color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased;
+}
+body.lang-zh { font-family: 'Noto Serif SC','SimSun','STSong',serif; font-size: 16px; line-height: 1.9; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 100; background: var(--bg);
+  border-bottom: 1px solid var(--rule); padding: 0;
+}
+.topbar-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 1.25rem; gap: 0.75rem;
+}
+.topbar .back {
+  font-family: 'Crimson Pro','Georgia',serif; font-size: 0.85rem;
+  color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap;
+}
+body.lang-zh .topbar .back { font-family: 'Noto Serif SC',serif; }
+.topbar .back:hover { text-decoration: underline; }
+.topbar .title-area { text-align: center; flex: 1; min-width: 0; }
+.topbar .book-title {
+  font-family: 'Crimson Pro','Georgia',serif; font-size: 1rem;
+  font-weight: 700; color: var(--ink); line-height: 1.3;
+}
+body.lang-zh .topbar .book-title { font-family: 'Noto Serif SC',serif; }
+.topbar .book-title-zh { font-size: 0.8rem; color: var(--muted); }
+
+/* Mode tabs */
+.mode-tabs {
+  display: flex; border-top: 1px solid var(--rule); background: var(--bg2);
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.mode-tabs button {
+  flex: 1; min-width: 4rem; padding: 0.5rem 0.75rem; border: none;
+  background: transparent; cursor: pointer;
+  font-family: 'Noto Serif SC','Crimson Pro',serif; font-size: 0.85rem;
+  color: var(--muted); font-weight: 600; white-space: nowrap;
+  transition: all 0.15s; border-bottom: 2px solid transparent;
+}
+.mode-tabs button:hover { color: var(--ink); }
+.mode-tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+.mode-tabs button:disabled { opacity: 0.35; cursor: default; }
+
+/* Content */
+.content { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+.tts-visible .content { padding-bottom: 6rem; }
+.loading { text-align: center; padding: 5rem 2rem; color: var(--muted); font-style: italic; }
+
+.content h1 {
+  font-family: 'Crimson Pro','Georgia',serif; font-size: 2.2rem;
+  font-weight: 700; color: var(--accent); text-align: center;
+  margin: 0 0 0.5rem; line-height: 1.25;
+}
+body.lang-zh .content h1 { font-family: 'Noto Serif SC',serif; font-size: 1.8rem; }
+.content h2 {
+  font-family: 'Crimson Pro','Georgia',serif; font-size: 1.5rem;
+  font-weight: 700; color: var(--ink); margin: 3rem 0 1rem;
+  padding-top: 0.5rem; border-top: 1px solid var(--rule);
+}
+body.lang-zh .content h2 { font-family: 'Noto Serif SC',serif; font-size: 1.25rem; }
+.content h3 {
+  font-family: 'Crimson Pro','Georgia',serif; font-size: 1.2rem;
+  font-weight: 700; color: var(--accent2); margin: 2rem 0 0.75rem;
+}
+body.lang-zh .content h3 { font-family: 'Noto Serif SC',serif; }
+.content p { margin-bottom: 0.9rem; text-indent: 1.5em; }
+.content p.no-indent { text-indent: 0; }
+.content .subtitle { text-align: center; font-style: italic; color: var(--muted); margin-bottom: 2.5rem; font-size: 1rem; text-indent: 0; }
+.content .author-line { text-align: center; font-family: 'Crimson Pro','Georgia',serif; font-size: 1.1rem; color: var(--muted); margin-bottom: 0.25rem; text-indent: 0; }
+body.lang-zh .content .author-line { font-family: 'Noto Serif SC',serif; }
+.content hr { border: none; border-top: 1px solid var(--rule); margin: 2rem auto; width: 30%; }
+
+.gutenberg-notice { font-size: 0.8rem; color: var(--muted); margin: 1rem 0 2rem; padding: 0.75rem 1rem; background: var(--bg2); border-radius: 4px; text-indent: 0; line-height: 1.5; }
+
+.content .toc { background: var(--bg2); padding: 1.5rem 2rem; margin: 2rem 0; border-radius: 4px; border: 1px solid var(--rule); }
+.content .toc h3 { margin-top: 0; font-size: 1.1rem; color: var(--ink); }
+.content .toc a { display: block; color: var(--accent2); text-decoration: none; font-size: 0.9rem; padding: 0.2rem 0; }
+.content .toc a:hover { text-decoration: underline; }
+
+.error { text-align: center; padding: 5rem 2rem; }
+.error h2 { color: var(--accent); border: none; font-size: 1.5rem; }
+
+/* Bilingual */
+.bi-segment { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--rule); }
+.bi-segment .bi-en { font-family: 'Lora','Georgia',serif; font-size: 0.95rem; color: var(--ink); margin-bottom: 0.4rem; line-height: 1.7; }
+.bi-segment .bi-zh { font-family: 'Noto Serif SC','SimSun',serif; font-size: 0.95rem; color: var(--accent2); line-height: 1.8; }
+.bi-segment .bi-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 0.5rem; }
+
+/* Audiobook */
+.audio-wrap { text-align: center; }
+.audio-wrap iframe { width: 100%; max-width: 640px; height: 360px; border: none; border-radius: 6px; background: #000; }
+.audio-dl { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--accent); color: #fff; text-decoration: none; border-radius: 4px; font-size: 1rem; font-weight: 600; margin: 1rem 0; transition: opacity 0.2s; }
+.audio-dl:hover { opacity: 0.85; }
+.audio-note { font-size: 0.9rem; color: var(--muted); margin-top: 1rem; font-style: italic; }
+
+@media (max-width: 600px) {
+  .content { padding: 1.5rem 1rem 3rem; }
+  .content h1 { font-size: 1.6rem; }
+  .content h2 { font-size: 1.25rem; }
+  .topbar-row { padding: 0.5rem 0.75rem; }
+  .topbar .book-title { font-size: 0.9rem; }
+  .mode-tabs button { font-size: 0.78rem; padding: 0.4rem 0.5rem; }
+  .audio-wrap iframe { height: 220px; }
+  .tts-bar { display: none; }
+  .tts-bar.visible { display: block; }
+}
+
+/* TTS bar */
+.tts-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: var(--bg); border-top: 1px solid var(--rule);
+  padding: 0.5rem 1rem;
+  display: none; align-items: center; justify-content: center;
+  gap: 0.75rem; flex-wrap: wrap;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+}
+.tts-bar.visible { display: flex; }
+
+.tts-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 2px solid var(--accent); background: transparent;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.tts-btn:hover { background: var(--accent); }
+.tts-btn svg { width: 16px; height: 16px; fill: var(--accent); transition: fill 0.2s; }
+.tts-btn:hover svg { fill: #fff; }
+.tts-btn.playing { background: var(--accent); }
+.tts-btn.playing svg { fill: #fff; }
+
+.tts-speed {
+  padding: 0.35rem 0.5rem; border: 1px solid var(--rule);
+  border-radius: 4px; background: var(--bg); font-size: 0.8rem;
+  color: var(--ink); cursor: pointer; font-family: inherit;
+}
+.tts-speed:focus { outline: none; border-color: var(--accent); }
+
+.tts-voice {
+  padding: 0.35rem 0.5rem; border: 1px solid var(--rule);
+  border-radius: 4px; background: var(--bg); font-size: 0.8rem;
+  color: var(--ink); cursor: pointer; font-family: inherit;
+  max-width: 180px; min-width: 100px;
+}
+.tts-voice:focus { outline: none; border-color: var(--accent); }
+
+.tts-label { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+
+/* Reading highlight */
+.content p.reading {
+  background: rgba(139,37,0,0.08);
+  border-radius: 3px;
+  outline: 2px solid rgba(139,37,0,0.2);
+  outline-offset: 2px;
+  transition: all 0.15s;
+}
+
+@media (max-width: 600px) {
+  .tts-bar { padding: 0.4rem 0.5rem; gap: 0.4rem; }
+  .tts-voice { max-width: 120px; font-size: 0.75rem; }
+  .tts-label { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <a class="back" href="agatha-christie-guide.html">← 指南</a>
+    <div class="title-area">
+      <div class="book-title" id="bookTitle">加载中...</div>
+      <div class="book-title-zh" id="bookTitleZh"></div>
+    </div>
+    <span style="font-size:0.8rem;color:var(--muted);white-space:nowrap;" id="bookMeta"></span>
+  </div>
+  <div class="mode-tabs" id="modeTabs">
+    <button data-mode="en">英文</button>
+    <button data-mode="zh">中文</button>
+    <button data-mode="bi">双语</button>
+    <button data-mode="audio">听书</button>
+  </div>
+</div>
+
+<div class="content" id="content">
+  <div class="loading">Loading...</div>
+</div>
+
+<div class="tts-bar" id="ttsBar">
+  <button class="tts-btn" id="ttsPlay" title="播放 / 暂停">
+    <svg viewBox="0 0 24 24"><polygon points="6,4 20,12 6,20"/></svg>
+  </button>
+  <button class="tts-btn" id="ttsStop" title="停止">
+    <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
+  </button>
+  <span class="tts-label">语速</span>
+  <select class="tts-speed" id="ttsSpeed">
+    <option value="0.5">0.5x</option>
+    <option value="0.75">0.75x</option>
+    <option value="1" selected>1x</option>
+    <option value="1.25">1.25x</option>
+    <option value="1.5">1.5x</option>
+  </select>
+  <span class="tts-label">声音</span>
+  <select class="tts-voice" id="ttsVoice"></select>
+</div>
+
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var enBook = params.get('en') || params.get('book') || '';
+  var zhBook = params.get('zh') || '';
+  var lang = params.get('lang') || 'en';
+  var currentMode = lang === 'zh' ? 'zh' : 'en';
+
+  // If bilingual URL format, override
+  if (enBook && zhBook && !params.get('book')) {
+    currentMode = 'bi';
+  }
+
+  // Metadata
+  var enMeta = {
+    'the-mysterious-affair-at-styles': { title: 'The Mysterious Affair at Styles', zh: '斯泰尔斯庄园奇案', year: '1920', series: 'Hercule Poirot #1', author: 'Agatha Christie' },
+    'the-secret-adversary': { title: 'The Secret Adversary', zh: '暗藏杀机', year: '1922', series: 'Tommy & Tuppence #1', author: 'Agatha Christie' },
+    'the-murder-on-the-links': { title: 'The Murder on the Links', zh: '高尔夫球场的疑云', year: '1923', series: 'Hercule Poirot #2', author: 'Agatha Christie' },
+    'the-man-in-the-brown-suit': { title: 'The Man in the Brown Suit', zh: '褐衣男子', year: '1924', series: 'Standalone', author: 'Agatha Christie' },
+    'poirot-investigates': { title: 'Poirot Investigates', zh: '首相绑架案', year: '1924', series: 'Hercule Poirot (Stories)', author: 'Agatha Christie' },
+    'the-secret-of-chimneys': { title: 'The Secret of Chimneys', zh: '烟囱大厦的秘密', year: '1925', series: 'Superintendent Battle #1', author: 'Agatha Christie' },
+    'the-murder-of-roger-ackroyd': { title: 'The Murder of Roger Ackroyd', zh: '罗杰疑案', year: '1926', series: 'Hercule Poirot #4', author: 'Agatha Christie' },
+    'the-big-four': { title: 'The Big Four', zh: '四大魔头', year: '1927', series: 'Hercule Poirot #5', author: 'Agatha Christie' },
+    'the-mystery-of-the-blue-train': { title: 'The Mystery of the Blue Train', zh: '蓝色特快上的秘密', year: '1928', series: 'Hercule Poirot #6', author: 'Agatha Christie' },
+    'the-seven-dials-mystery': { title: 'The Seven Dials Mystery', zh: '七钟面之谜', year: '1929', series: 'Superintendent Battle #2', author: 'Agatha Christie' },
+    'partners-in-crime': { title: 'Partners in Crime', zh: '犯罪团伙', year: '1929', series: 'Tommy & Tuppence (Stories)', author: 'Agatha Christie' },
+    'the-murder-at-the-vicarage': { title: 'The Murder at the Vicarage', zh: '寓所谜案', year: '1930', series: 'Miss Marple #1', author: 'Agatha Christie' }
+  };
+
+  var zhMeta = {
+    '斯泰尔斯庄园奇案': { title: '斯泰尔斯庄园奇案', titleEn: 'The Mysterious Affair at Styles', enKey: 'the-mysterious-affair-at-styles', year: '1920', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '暗藏杀机': { title: '暗藏杀机', titleEn: 'The Secret Adversary', enKey: 'the-secret-adversary', year: '1922', series: 'Tommy & Tuppence', author: '阿加莎·克里斯蒂' },
+    '高尔夫球场的疑云': { title: '高尔夫球场的疑云', titleEn: 'The Murder on the Links', enKey: 'the-murder-on-the-links', year: '1923', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '褐衣男子': { title: '褐衣男子', titleEn: 'The Man in the Brown Suit', enKey: 'the-man-in-the-brown-suit', year: '1924', series: 'Standalone', author: '阿加莎·克里斯蒂' },
+    '首相绑架案': { title: '首相绑架案', titleEn: 'Poirot Investigates', enKey: 'poirot-investigates', year: '1924', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '烟囱大厦的秘密': { title: '烟囱大厦的秘密', titleEn: 'The Secret of Chimneys', enKey: 'the-secret-of-chimneys', year: '1925', series: 'Standalone', author: '阿加莎·克里斯蒂' },
+    '四大魔头': { title: '四大魔头', titleEn: 'The Big Four', enKey: 'the-big-four', year: '1927', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '蓝色特快上的秘密': { title: '蓝色特快上的秘密', titleEn: 'The Mystery of the Blue Train', enKey: 'the-mystery-of-the-blue-train', year: '1928', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '七钟面之谜': { title: '七钟面之谜', titleEn: 'The Seven Dials Mystery', enKey: 'the-seven-dials-mystery', year: '1929', series: 'Standalone', author: '阿加莎·克里斯蒂' },
+    '犯罪团伙': { title: '犯罪团伙', titleEn: 'Partners in Crime', enKey: 'partners-in-crime', year: '1929', series: 'Tommy & Tuppence', author: '阿加莎·克里斯蒂' },
+    '寓所谜案': { title: '寓所谜案', titleEn: 'The Murder at the Vicarage', enKey: 'the-murder-at-the-vicarage', year: '1930', series: 'Miss Marple', author: '阿加莎·克里斯蒂' },
+    '东方快车谋杀案': { title: '东方快车谋杀案', titleEn: 'Murder on the Orient Express', year: '1934', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    'ABC谋杀案': { title: 'ABC谋杀案', titleEn: 'The ABC Murders', year: '1936', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '无人生还': { title: '无人生还', titleEn: 'And Then There Were None', year: '1939', series: 'Standalone', author: '阿加莎·克里斯蒂' },
+    '罗杰疑案': { title: '罗杰疑案', titleEn: 'The Murder of Roger Ackroyd', enKey: 'the-murder-of-roger-ackroyd', year: '1926', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '怪钟疑案': { title: '怪钟疑案', titleEn: 'The Clocks', year: '1963', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '神秘的第三者': { title: '神秘的第三者', titleEn: 'Third Girl', year: '1966', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '空幻之屋': { title: '空幻之屋', titleEn: 'The Hollow', year: '1946', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '沉睡谋杀案': { title: '沉睡谋杀案', titleEn: 'Sleeping Murder', year: '1976', series: 'Miss Marple', author: '阿加莎·克里斯蒂' },
+    '死亡终局': { title: '死亡终局', titleEn: 'Death Comes as the End', year: '1944', series: 'Standalone', author: '阿加莎·克里斯蒂' },
+    '沉默的证人': { title: '沉默的证人', titleEn: 'Dumb Witness', year: '1937', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '啤酒谋杀案': { title: '啤酒谋杀案', titleEn: 'Five Little Pigs', year: '1942', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '云中奇案': { title: '云中奇案', titleEn: 'Death in the Clouds', year: '1935', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' },
+    '死亡草': { title: '死亡草', titleEn: 'The Thirteen Problems', year: '1932', series: 'Miss Marple', author: '阿加莎·克里斯蒂' },
+    '悬崖上的谋杀': { title: '悬崖上的谋杀', titleEn: "Why Didn't They Ask Evans?", year: '1934', series: 'Standalone', author: '阿加莎·克里斯蒂' },
+    '大象的证词': { title: '大象的证词', titleEn: 'Elephants Can Remember', year: '1972', series: 'Hercule Poirot', author: '阿加莎·克里斯蒂' }
+  };
+
+  // YouTube audiobook IDs
+  var audioIds = {
+    'the-mysterious-affair-at-styles': 'LmNwa4tD9KU',
+    'the-murder-on-the-links': 'q9u7rR-Bgd8',
+    'the-man-in-the-brown-suit': 'FBiz7Fp1y9c',
+    'poirot-investigates': 'G00m_RkeM-g',
+    'the-murder-of-roger-ackroyd': 'ZQTRjUtS1VI',
+    'the-big-four': 'OkLA_l0f2u0',
+    'the-mystery-of-the-blue-train': 'q9S06ftvSZs',
+    'partners-in-crime': 'p9grnJrhgHg'
+  };
+
+  var audioDls = {
+    'the-secret-adversary': 'https://mysteryaudio.org/the-secret-adversary-agatha-christie/',
+    'the-secret-of-chimneys': 'https://mysteryaudio.org/the-secret-of-chimneys-1925-agatha-christie/',
+    'the-seven-dials-mystery': 'https://mysteryaudio.org/the-seven-dials-mystery-agatha-christie/',
+    'the-murder-at-the-vicarage': 'https://mysteryaudio.org/the-complete-miss-marple-mystery-collection-agatha-christie/'
+  };
+
+  // Resolve book identity
+  var enKey = enBook;
+  var zhKey = zhBook;
+  if (!enKey && zhBook) {
+    var zm = zhMeta[zhBook];
+    if (zm && zm.enKey) enKey = zm.enKey;
+  }
+  if (!zhKey && enBook) {
+    var em = enMeta[enBook];
+    if (em && em.zh) zhKey = em.zh;
+  }
+
+  var meta = enMeta[enKey] || zhMeta[zhKey || enBook];
+  if (!meta && enBook) meta = enMeta[enBook];
+  if (!meta && zhBook) meta = zhMeta[zhBook];
+
+  if (!enBook && !zhBook) {
+    document.getElementById('content').innerHTML = '<div class="error"><h2>No book specified</h2><p>Please select a book from the guide.</p></div>';
+    return;
+  }
+
+  // Update title bar
+  if (meta) {
+    document.getElementById('bookTitle').textContent = meta.title || meta.titleEn || '';
+    document.getElementById('bookTitleZh').textContent = meta.zh || meta.title || '';
+    document.getElementById('bookMeta').textContent = (meta.year || '') + ' · ' + (meta.series || '');
+    document.title = (meta.title || meta.titleEn || '') + ' — Agatha Christie';
+  }
+
+  // Mode tabs
+  var hasEn = !!enKey;
+  var hasZh = !!zhKey;
+  var hasBi = hasEn && hasZh;
+  var hasAudio = enKey && (audioIds[enKey] || audioDls[enKey]);
+
+  var tabBtns = document.querySelectorAll('#modeTabs button');
+  tabBtns.forEach(function(btn) {
+    var m = btn.dataset.mode;
+    if (m === 'en') btn.disabled = !hasEn;
+    else if (m === 'zh') btn.disabled = !hasZh;
+    else if (m === 'bi') btn.disabled = !hasBi;
+    else if (m === 'audio') btn.disabled = !hasAudio;
+    if (m === currentMode && !btn.disabled) btn.classList.add('active');
+    else if (m === currentMode && btn.disabled) {
+      // Fallback to first available mode
+      btn.classList.remove('active');
+    }
+  });
+
+  // If current mode is disabled, switch to first available
+  var activeBtn = document.querySelector('#modeTabs button.active');
+  if (!activeBtn) {
+    if (hasEn) { currentMode = 'en'; tabBtns[0].classList.add('active'); }
+    else if (hasZh) { currentMode = 'zh'; tabBtns[1].classList.add('active'); }
+    else if (hasBi) { currentMode = 'bi'; tabBtns[2].classList.add('active'); }
+  }
+
+  // Tab click handlers
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (btn.disabled) return;
+      document.querySelectorAll('#modeTabs button').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentMode = btn.dataset.mode;
+      loadMode();
+    });
+  });
+
+  // Load current mode
+  loadMode();
+
+  function loadMode() {
+    document.body.className = (currentMode === 'zh' || currentMode === 'bi') ? 'lang-zh' : '';
+    var content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">Loading...</div>';
+    stopTts();
+
+    if (currentMode === 'en') { showTtsBar(); loadEn(); }
+    else if (currentMode === 'zh') { showTtsBar(); loadZh(); }
+    else if (currentMode === 'bi') { showTtsBar(); loadBi(); }
+    else if (currentMode === 'audio') { hideTtsBar(); loadAudio(); }
+  }
+
+  function loadEn() {
+    fetch('novels/' + enKey + '.txt')
+      .then(function(r) { if (!r.ok) throw new Error('Not found'); return r.text(); })
+      .then(function(text) { renderBook(text, enMeta[enKey], false); })
+      .catch(function() { showError(); });
+  }
+
+  function loadZh() {
+    fetch('novels-zh/' + zhKey + '.txt')
+      .then(function(r) { if (!r.ok) throw new Error('Not found'); return r.text(); })
+      .then(function(text) { renderBook(text, zhMeta[zhKey], true); })
+      .catch(function() { showError(); });
+  }
+
+  function loadBi() {
+    Promise.all([
+      fetch('novels/' + enKey + '.txt').then(function(r) { if (!r.ok) throw new Error(); return r.text(); }),
+      fetch('novels-zh/' + zhKey + '.txt').then(function(r) { if (!r.ok) throw new Error(); return r.text(); })
+    ]).then(function(results) {
+      renderBilingual(results[0], results[1], enMeta[enKey], zhMeta[zhKey]);
+    }).catch(function() { showError(); });
+  }
+
+  function loadAudio() {
+    var html = '';
+    var em = enMeta[enKey];
+    html += '<h1>' + esc(em.title) + '</h1>';
+    html += '<p class="author-line">' + esc(em.author) + '</p>';
+    html += '<p class="subtitle">' + esc(em.zh) + ' · ' + em.year + ' · ' + em.series + '</p>';
+    html += '<div class="audio-wrap">';
+
+    if (audioIds[enKey]) {
+      html += '<iframe src="https://www.youtube.com/embed/' + audioIds[enKey] + '?rel=0" allowfullscreen allow="autoplay; encrypted-media"></iframe>';
+      html += '<p class="audio-note">朗读：Arthur Lane（Gates of Imagination）</p>';
+    } else if (audioDls[enKey]) {
+      html += '<a class="audio-dl" href="' + audioDls[enKey] + '" target="_blank" rel="noopener">下载免费有声书 (MP3/M4B)</a>';
+      html += '<p class="audio-note">此版本暂无 YouTube 在线播放，点击跳转至 mysteryaudio.org 免费下载真人朗读版。</p>';
+    }
+
+    html += '</div>';
+    document.getElementById('content').innerHTML = html;
+  }
+
+  function showError() {
+    var nm = currentMode === 'zh' ? zhMeta[zhKey] : enMeta[enKey];
+    document.getElementById('content').innerHTML = '<div class="error"><h2>Book not available</h2><p>The text for <strong>' + esc(nm ? nm.title : (enKey || zhKey)) + '</strong> could not be loaded.</p><p style="margin-top:1rem"><a href="agatha-christie-guide.html" style="color:var(--accent)">← Back to Guide</a></p></div>';
+  }
+
+  // === TTS (AI Read Aloud) ===
+  var ttsPlaying = false;
+  var ttsPaused = false;
+  var ttsParaIdx = 0;
+  var ttsParas = [];
+  var ttsUtterance = null;
+  var ttsRate = 1;
+
+  var ttsBar = document.getElementById('ttsBar');
+  var ttsPlayBtn = document.getElementById('ttsPlay');
+  var ttsStopBtn = document.getElementById('ttsStop');
+  var ttsSpeedSel = document.getElementById('ttsSpeed');
+  var ttsVoiceSel = document.getElementById('ttsVoice');
+
+  function showTtsBar() {
+    ttsBar.classList.add('visible');
+    document.body.classList.add('tts-visible');
+    populateVoices();
+  }
+
+  function hideTtsBar() {
+    ttsBar.classList.remove('visible');
+    document.body.classList.remove('tts-visible');
+    stopTts();
+  }
+
+  function populateVoices() {
+    var voices = speechSynthesis.getVoices();
+    var langPrefix = (currentMode === 'zh') ? 'zh' : 'en';
+    ttsVoiceSel.innerHTML = '';
+    var found = false;
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang.indexOf(langPrefix) === 0) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+        if (!found && voices[i].default) { opt.selected = true; found = true; }
+        ttsVoiceSel.appendChild(opt);
+      }
+    }
+    // If no matching voice, add all voices
+    if (ttsVoiceSel.options.length === 0) {
+      for (var i = 0; i < voices.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = voices[i].name + ' (' + voices[i].lang + ')';
+        ttsVoiceSel.appendChild(opt);
+      }
+    }
+  }
+
+  function getSelectedVoice() {
+    var voices = speechSynthesis.getVoices();
+    var idx = parseInt(ttsVoiceSel.value);
+    return voices[idx] || null;
+  }
+
+  function collectParas() {
+    ttsParas = [];
+    var content = document.getElementById('content');
+    var allP = content.querySelectorAll('p');
+    for (var i = 0; i < allP.length; i++) {
+      var text = allP[i].textContent.trim();
+      if (text.length > 1 && text !== '&nbsp;' && !/^(This eBook|Produced by|Transcribed)/i.test(text)) {
+        ttsParas.push({ el: allP[i], text: text });
+      }
+    }
+    // For bilingual mode, also collect .bi-en or .bi-zh based on language
+    if (currentMode === 'bi') {
+      ttsParas = [];
+      var biDivs = content.querySelectorAll('.bi-segment');
+      for (var i = 0; i < biDivs.length; i++) {
+        var enEl = biDivs[i].querySelector('.bi-en');
+        var zhEl = biDivs[i].querySelector('.bi-zh');
+        if (enEl) ttsParas.push({ el: enEl, text: enEl.textContent.replace(/^EN/, '').trim() });
+        if (zhEl) ttsParas.push({ el: zhEl, text: zhEl.textContent.replace(/^中/, '').trim() });
+      }
+    }
+  }
+
+  function startTts() {
+    if (ttsPlaying && ttsPaused) {
+      resumeTts();
+      return;
+    }
+    if (ttsPlaying) {
+      pauseTts();
+      return;
+    }
+
+    collectParas();
+    if (ttsParas.length === 0) return;
+
+    ttsPlaying = true;
+    ttsPaused = false;
+    ttsParaIdx = 0;
+    ttsRate = parseFloat(ttsSpeedSel.value);
+    ttsPlayBtn.classList.add('playing');
+    updatePlayIcon(true);
+    speakNext();
+  }
+
+  function speakNext() {
+    if (!ttsPlaying || ttsPaused) return;
+    if (ttsParaIdx >= ttsParas.length) {
+      stopTts();
+      return;
+    }
+
+    // Remove previous highlight
+    var prev = document.querySelector('.content p.reading, .content .reading');
+    if (prev) prev.classList.remove('reading');
+
+    var item = ttsParas[ttsParaIdx];
+    item.el.classList.add('reading');
+    item.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    ttsUtterance = new SpeechSynthesisUtterance(item.text);
+    ttsUtterance.rate = ttsRate;
+    var voice = getSelectedVoice();
+    if (voice) ttsUtterance.voice = voice;
+    ttsUtterance.lang = (currentMode === 'zh') ? 'zh-CN' : 'en-US';
+
+    ttsUtterance.onend = function() {
+      ttsParaIdx++;
+      speakNext();
+    };
+
+    ttsUtterance.onerror = function(e) {
+      if (e.error !== 'canceled' && e.error !== 'interrupted') {
+        ttsParaIdx++;
+        speakNext();
+      }
+    };
+
+    speechSynthesis.speak(ttsUtterance);
+  }
+
+  function pauseTts() {
+    ttsPaused = true;
+    speechSynthesis.cancel();
+    updatePlayIcon(false);
+    ttsPlayBtn.classList.remove('playing');
+  }
+
+  function resumeTts() {
+    ttsPaused = false;
+    ttsPlayBtn.classList.add('playing');
+    updatePlayIcon(true);
+    speakNext();
+  }
+
+  function stopTts() {
+    ttsPlaying = false;
+    ttsPaused = false;
+    ttsParaIdx = 0;
+    speechSynthesis.cancel();
+    ttsPlayBtn.classList.remove('playing');
+    updatePlayIcon(false);
+    var prev = document.querySelector('.content p.reading, .content .reading');
+    if (prev) prev.classList.remove('reading');
+  }
+
+  function updatePlayIcon(isPlaying) {
+    var svg = ttsPlayBtn.querySelector('svg');
+    if (isPlaying) {
+      svg.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    } else {
+      svg.innerHTML = '<polygon points="6,4 20,12 6,20"/>';
+    }
+  }
+
+  ttsPlayBtn.addEventListener('click', startTts);
+  ttsStopBtn.addEventListener('click', stopTts);
+
+  ttsSpeedSel.addEventListener('change', function() {
+    ttsRate = parseFloat(ttsSpeedSel.value);
+    if (ttsPlaying && !ttsPaused) {
+      // Restart current paragraph with new rate
+      speechSynthesis.cancel();
+      speakNext();
+    }
+  });
+
+  // Init voices on load
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = function() {
+    if (ttsBar.classList.contains('visible') && ttsVoiceSel.options.length === 0) {
+      populateVoices();
+    }
+  };
+
+  // === Chapter detection ===
+  function isChapterLine(line, isZh) {
+    if (isZh) {
+      if (/^第\d+章/.test(line)) return { type: 'chapter', num: line.match(/^第(\d+)章/)[1], title: line.replace(/^第\d+章\s*/, '') };
+      if (/^第[一二三四五六七八九十百千]+章/.test(line)) return { type: 'chapter', num: line.match(/^第([一二三四五六七八九十百千]+)章/)[1], title: line.replace(/^第[一二三四五六七八九十百千]+章\s*/, '') };
+      if (/^第[一二三四五六七八九十百千]+部\s+第[一二三四五六七八九十百千]+章/.test(line)) return { type: 'chapter', num: line.match(/^第[一二三四五六七八九十百千]+部\s+第([一二三四五六七八九十百千]+)章/)[1], title: '' };
+      return null;
+    }
+    if (/^CHAPTER\s+[IVXLC]+\.?\s*$/.test(line)) return { type: 'chapter', num: line.match(/[IVXLC]+\.?$/)[0].replace('.',''), title: '' };
+    if (/^CHAPTER\s+[IVXLC]+\.\s+\S/.test(line)) return { type: 'chapter', num: line.match(/[IVXLC]+/)[0], title: cleanTitle(line.replace(/^CHAPTER\s+[IVXLC]+\.\s+/, '')) };
+    if (/^Chapter\s+\d+\.?\s*$/.test(line)) return { type: 'chapter', num: line.match(/\d+/)[0], title: '' };
+    if (/^Chapter\s+\d+\.?\s+\S/.test(line)) return { type: 'chapter', num: line.match(/\d+/)[0], title: cleanTitle(line.replace(/^Chapter\s+\d+\.?\s+/, '')) };
+    if (/^\d+\.\s+[A-Z]/.test(line) && line.length < 60) return { type: 'chapter', num: line.match(/^\d+/)[0], title: cleanTitle(line.replace(/^\d+\.\s+/, '')) };
+    if (/^\d+\s+[A-Z]/.test(line) && line.length < 60 && line.length > 4) return { type: 'chapter', num: line.match(/^\d+/)[0], title: cleanTitle(line.replace(/^\d+\s+/, '')) };
+    if (/^[IVXLC]+\.?\s+[A-Z]/.test(line) && line.length < 60 && line.length > 4) return { type: 'chapter', num: line.match(/^[IVXLC]+/)[0], title: cleanTitle(line.replace(/^[IVXLC]+\.?\s+/, '')) };
+    if (/^[IVXLC]+\.?\s*$/.test(line) && line.length <= 8 && /^[IVXLC]+$/.test(line.replace('.','').trim())) return { type: 'chapter', num: line.replace('.','').trim(), title: '' };
+    return null;
+  }
+
+  function cleanTitle(title) {
+    return title.replace(/\s+_?\d+_?\s*$/, '').replace(/\s{2,}.*$/, '').trim();
+  }
+
+  function isTocEntry(line, isZh) {
+    if (isZh) return /^第\d+章/.test(line) || /^第[一二三四五六七八九十百千]+章/.test(line);
+    return /^CHAPTER\s+[IVXLC]+\.\s+\S/.test(line) || /^\d+\s+[A-Z]/.test(line) || /^\d+\.\s+[A-Z]/.test(line) || /^[IVXLC]+\.?\s+[A-Z]/.test(line);
+  }
+
+  // === Single-language render ===
+  function renderBook(text, meta, isZh) {
+    var lines = text.split(/\r?\n/);
+    var html = '';
+    var inHeader = true;
+    var inFooter = false;
+    var chapterCount = 0;
+    var tocEntries = [];
+    var inTocZone = true;
+    var tocEndLine = 0;
+
+    html += '<h1>' + esc(meta.title) + '</h1>';
+    html += '<p class="author-line">' + esc(meta.author) + '</p>';
+    if (meta.titleEn) {
+      html += '<p class="subtitle">' + esc(meta.titleEn) + ' · ' + meta.year + ' · ' + meta.series + '</p>';
+    } else {
+      html += '<p class="subtitle">' + meta.year + ' · ' + meta.series + ' · Public Domain</p>';
+    }
+    if (!isZh) {
+      html += '<div class="gutenberg-notice">This eBook is from Project Gutenberg. It is in the public domain in the United States.</div>';
+    }
+
+    // First pass: find TOC
+    if (!isZh) {
+      var seenChapters = {};
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (line.indexOf('*** START OF') >= 0) { inHeader = false; continue; }
+        if (inHeader) continue;
+        if (line === '') continue;
+        var ch = isChapterLine(line, false);
+        if (ch) {
+          if (inTocZone && isTocEntry(line, false)) {
+            var key = ch.num;
+            if (seenChapters[key]) { inTocZone = false; }
+            else { seenChapters[key] = true; tocEntries.push({ num: ch.num, title: ch.title }); tocEndLine = i; }
+          } else { inTocZone = false; }
+        } else if (inTocZone && line.length > 3 && !/^(Produced|Transcribed|Title|Author|Release|Language|Character|Credits|eBook|THE |BY |AGATHA|Copyright|CONTENTS|Cast of|FIRST PUBLISHED|Original publication|Illustration|TO |PAGE|Printed|All rights|Published by)/i.test(line)) {
+          inTocZone = false;
+        }
+      }
+    }
+
+    var tocIsReal = tocEntries.length > 0 && tocEndLine < 100 && !isZh;
+    if (tocEntries.length > 3 && tocIsReal) {
+      html += '<div class="toc"><h3>Table of Contents</h3>';
+      for (var t = 0; t < tocEntries.length; t++) {
+        html += '<a href="#ch' + (t + 1) + '">' + esc(tocEntries[t].num + '. ' + tocEntries[t].title) + '</a>';
+      }
+      html += '</div>';
+    }
+
+    // Second pass: render
+    inHeader = true;
+    chapterCount = 0;
+    var prevBlank = false;
+    var skipToc = tocEntries.length > 3 && tocIsReal;
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (inHeader) {
+        if (!isZh) {
+          if (line.indexOf('*** START OF') >= 0) { inHeader = false; continue; }
+          continue;
+        } else { inHeader = false; }
+      }
+      if (!isZh) {
+        if (line.indexOf('*** END OF') >= 0) { inFooter = true; continue; }
+        if (inFooter) continue;
+      }
+      if (!isZh && /^(Produced by|Transcribed by|Title:|Author:|Release Date:|Language:|Character set|Credits:|eBook|Copyright)/i.test(line)) continue;
+      if (skipToc && i <= tocEndLine && isTocEntry(line, false)) continue;
+      if (line === '') {
+        if (!prevBlank && chapterCount > 0) html += '<p class="no-indent">&nbsp;</p>';
+        prevBlank = true; continue;
+      }
+      prevBlank = false;
+      var ch = isChapterLine(line, isZh);
+      if (ch) {
+        chapterCount++;
+        var displayTitle;
+        if (isZh) { displayTitle = '第' + ch.num + '章'; if (ch.title) displayTitle += ' ' + ch.title; }
+        else { displayTitle = 'Chapter ' + ch.num; if (ch.title) displayTitle += ': ' + ch.title; }
+        html += '<h2 id="ch' + chapterCount + '">' + esc(displayTitle) + '</h2>';
+        continue;
+      }
+      html += '<p>' + esc(line) + '</p>';
+    }
+
+    if (chapterCount === 0) {
+      html += '<div class="gutenberg-notice" style="margin-top:2rem"><strong>Note:</strong> Chapter headings could not be automatically detected. The full text is rendered below as continuous prose.</div>';
+    }
+    document.getElementById('content').innerHTML = html;
+  }
+
+  // === Bilingual render ===
+  function renderBilingual(enText, zhText, enMeta, zhMeta) {
+    var enLines = enText.split(/\r?\n/);
+    var zhLines = zhText.split(/\r?\n/);
+
+    // Extract English paragraphs
+    var enParas = [];
+    var inEnHeader = true, inEnFooter = false;
+    for (var i = 0; i < enLines.length; i++) {
+      var line = enLines[i].trim();
+      if (inEnHeader) { if (line.indexOf('*** START OF') >= 0) { inEnHeader = false; } continue; }
+      if (line.indexOf('*** END OF') >= 0) { inEnFooter = true; continue; }
+      if (inEnFooter) continue;
+      if (line === '' || /^(Produced by|Transcribed by|Title:|Author:|Release Date:|Language:|Character set|Credits:|eBook|Copyright)/i.test(line)) continue;
+      if (isChapterLine(line, false)) continue;
+      enParas.push(line);
+    }
+
+    // Extract Chinese paragraphs
+    var zhParas = [];
+    var inZhHeader = true;
+    for (var i = 0; i < zhLines.length; i++) {
+      var line = zhLines[i].trim();
+      if (inZhHeader) {
+        // Skip the first few lines (title, author, etc.)
+        if (i > 4) inZhHeader = false;
+        continue;
+      }
+      if (line === '') continue;
+      if (isChapterLine(line, true)) continue;
+      zhParas.push(line);
+    }
+
+    // Align paragraphs
+    var segments = alignParagraphs(enParas, zhParas);
+
+    var html = '';
+    html += '<h1>' + esc(enMeta.title) + '</h1>';
+    html += '<p class="author-line">' + esc(enMeta.author) + ' / ' + esc(zhMeta.author) + '</p>';
+    html += '<p class="subtitle">' + esc(zhMeta.title) + ' · ' + enMeta.year + ' · 双语对照</p>';
+
+    for (var i = 0; i < segments.length; i++) {
+      html += '<div class="bi-segment">';
+      html += '<div class="bi-en"><span class="bi-label">EN</span>' + esc(segments[i].en) + '</div>';
+      html += '<div class="bi-zh"><span class="bi-label">中</span>' + esc(segments[i].zh) + '</div>';
+      html += '</div>';
+    }
+
+    document.getElementById('content').innerHTML = html;
+  }
+
+  function alignParagraphs(enParas, zhParas) {
+    var segments = [];
+    var enLen = enParas.length;
+    var zhLen = zhParas.length;
+    if (enLen === 0 || zhLen === 0) return segments;
+
+    if (enLen >= zhLen) {
+      var ratio = enLen / zhLen;
+      for (var i = 0; i < zhLen; i++) {
+        var start = Math.round(i * ratio);
+        var end = Math.round((i + 1) * ratio);
+        var enGroup = enParas.slice(start, end).join(' ');
+        segments.push({ en: enGroup, zh: zhParas[i] });
+      }
+    } else {
+      var ratio = zhLen / enLen;
+      for (var i = 0; i < enLen; i++) {
+        var start = Math.round(i * ratio);
+        var end = Math.round((i + 1) * ratio);
+        var zhGroup = zhParas.slice(start, end).join('');
+        segments.push({ en: enParas[i], zh: zhGroup });
+      }
+    }
+    return segments;
+  }
+
+  function esc(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+})();
+</script>
+</body>
+</html>
