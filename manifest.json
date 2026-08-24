@@ -1,0 +1,26 @@
+{
+  "name": "阿加莎·克里斯蒂 作品全集",
+  "short_name": "阿加莎全集",
+  "description": "阿加莎·克里斯蒂英文原版与中文译本双语阅读器，支持AI朗读、真人听书",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdfaf6",
+  "theme_color": "#8b2500",
+  "orientation": "any",
+  "lang": "zh-CN",
+  "categories": ["books", "education"],
+  "icons": [
+    {
+      "src": "./assets/icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./assets/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}
